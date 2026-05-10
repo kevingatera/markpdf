@@ -1,0 +1,155 @@
+/*
+ * academic.css defines the Academic theme for warm, manuscript-style PDFs.
+ * Academic — Literary manuscript warmth
+ * Warm paper tones, justified text, scholarly ornamentation.
+ * Inspired by fine book design and university press publications.
+ */
+
+body {
+  font-family: "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  font-weight: 700;
+}
+
+.markpdf-document {
+  padding: 56px 64px;
+}
+
+:root {
+  --markpdf-bg: #fffdf5;
+  --markpdf-text: #2c241b;
+  --markpdf-muted: #7a6e5f;
+  --markpdf-border: #d4cfc4;
+  --markpdf-accent: #8b2332;
+  --markpdf-code-bg: #f5f0e6;
+  --markpdf-heading: #1a120b;
+}
+
+html {
+  background: var(--markpdf-bg);
+}
+
+body {
+  line-height: 1.65;
+}
+
+h1 {
+  font-size: var(--markpdf-h1-size);
+  letter-spacing: -0.01em;
+  margin-top: 0;
+  font-variant-numeric: oldstyle-nums;
+}
+
+h2 {
+  font-size: var(--markpdf-h2-size);
+  border-bottom: none;
+  font-weight: 700;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.02em;
+}
+
+h3 {
+  font-size: var(--markpdf-h3-size);
+  font-weight: 700;
+  font-style: italic;
+}
+
+p {
+  text-align: justify;
+  hyphens: auto;
+  line-height: 1.7;
+}
+
+hr {
+  border-top: 1px solid var(--markpdf-border);
+  margin: 2.5em auto;
+  max-width: 40%;
+}
+
+blockquote {
+  border-left: 1px solid var(--markpdf-accent);
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  color: var(--markpdf-muted);
+  font-style: italic;
+}
+
+pre {
+  border-left: 1px solid var(--markpdf-accent);
+  background: var(--markpdf-code-bg);
+  border-radius: 0;
+}
+
+code {
+  background: var(--markpdf-code-bg);
+  border-radius: 0;
+  color: var(--markpdf-accent);
+}
+
+pre code {
+  color: var(--markpdf-text);
+}
+
+.mermaid {
+  background: transparent;
+  border: 0;
+  padding: 1.5em 0;
+}
+
+.math-display {
+  border-top: 1px solid var(--markpdf-border);
+  border-bottom: 1px solid var(--markpdf-border);
+  background: transparent;
+  padding: 1.5em 0;
+}
+
+table th {
+  border-bottom: 2px solid var(--markpdf-text);
+  font-weight: 700;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.02em;
+}
+
+tr:last-child td {
+  border-bottom: 2px solid var(--markpdf-text);
+}
+
+.markpdf-cover {
+  align-items: center;
+}
+
+.markpdf-cover h1 {
+  font-size: 3rem;
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.markpdf-cover-subtitle {
+  color: var(--markpdf-muted);
+  font-size: 1.28rem;
+  font-style: italic;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.markpdf-cover-author {
+  font-style: italic;
+}
+
+.markpdf-cover::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 1px;
+  background: var(--markpdf-accent);
+  margin-top: 2rem;
+}
+
+.markpdf-toc {
+  border-bottom: 1px solid var(--markpdf-border);
+}

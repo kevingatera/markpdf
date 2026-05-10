@@ -1,0 +1,26 @@
+# macOS and editor noise
+.DS_Store
+._*
+*.swp
+*.swo
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build and release outputs
+bin/
+dist/
+build/
+release/
+/markpdf
+/markpdf.exe
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Runtime scratch space used by PDF/browser verification.
+tmp/
+*.log

@@ -1,0 +1,12 @@
+<!--
+  cover.html renders the optional title page from cover/document metadata before
+  the table of contents and main content.
+-->
+<section class="markpdf-cover">
+  <div>
+    <h1>{{ .Title }}</h1>
+    {{ if .Subtitle }}<p class="markpdf-cover-subtitle">{{ .Subtitle }}</p>{{ end }}
+    {{ if .Author }}<p class="markpdf-cover-author">{{ .Author }}</p>{{ end }}
+    {{ if .Date }}<p class="markpdf-cover-date">{{ .Date }}</p>{{ end }}
+  </div>
+</section>

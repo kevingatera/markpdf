@@ -1,0 +1,174 @@
+/*
+ * github.css defines the GitHub-inspired theme for technical documentation.
+ * Github — Swiss engineering precision
+ * Grid-based starkness, functional beauty, zero ornamentation.
+ * Inspired by international typographic style and technical documentation.
+ */
+
+body {
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.markpdf-document {
+  padding: 48px;
+}
+
+:root {
+  --markpdf-accent: #d35400;
+  --markpdf-text: #111111;
+  --markpdf-muted: #666666;
+  --markpdf-border: #c0c0c0;
+  --markpdf-code-bg: #f0f0f0;
+  --markpdf-heading: #000000;
+}
+
+html {
+  background: #fafafa;
+}
+
+h1 {
+  font-size: var(--markpdf-h1-size);
+  font-weight: 800;
+  margin-top: 0;
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  font-size: var(--markpdf-h2-size);
+  border-bottom: none;
+  margin-top: 2.5em;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: var(--markpdf-h3-size);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-top: 2em;
+}
+
+p {
+  line-height: 1.6;
+}
+
+ul {
+  list-style: square;
+}
+
+hr {
+  border-top: 3px solid #000000;
+  margin: 2.5em 0;
+  max-width: 100%;
+}
+
+blockquote {
+  border-left: 4px solid #000000;
+  padding-left: 1.5em;
+  color: var(--markpdf-muted);
+  font-style: normal;
+  font-weight: 500;
+}
+
+pre {
+  border: 1px solid #000000;
+  background: #ffffff;
+  padding: 1em;
+  border-radius: 0;
+}
+
+code {
+  background: transparent;
+  border: 1px solid var(--markpdf-border);
+  border-radius: 0;
+  padding: 0.1em 0.3em;
+  color: var(--markpdf-accent);
+}
+
+pre code {
+  border: none;
+  padding: 0;
+  color: var(--markpdf-text);
+}
+
+table {
+  border-top: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  border-bottom: 1px solid var(--markpdf-border);
+  padding: 0.65em 0.75em;
+}
+
+th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.mermaid {
+  border: 0;
+  padding: 1.5em;
+  background: #ffffff;
+  border-radius: 0;
+}
+
+.math-display {
+  border: 1px solid #000000;
+  padding: 1.5em;
+  background: #ffffff;
+  border-radius: 0;
+}
+
+.markpdf-cover {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.markpdf-cover h1 {
+  font-size: 3.2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.markpdf-cover-subtitle {
+  border-left: 4px solid var(--markpdf-accent);
+  color: var(--markpdf-muted);
+  font-size: 1.18rem;
+  font-weight: 600;
+  padding-left: 1rem;
+}
+
+.markpdf-cover::after {
+  content: "";
+  display: block;
+  width: 120px;
+  height: 4px;
+  background: #000000;
+  margin-top: 1.5rem;
+}
+
+.markpdf-toc {
+  border-bottom: 2px solid #000000;
+}
+
+.markpdf-toc h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.1rem;
+}

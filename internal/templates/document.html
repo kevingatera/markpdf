@@ -1,0 +1,29 @@
+<!--
+  document.html is the top-level PDF document shell. Go injects sanitized
+  content, CSS, vendor libraries, and the markpdf runtime into this template.
+-->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Title }}</title>
+  <style>{{ .CSS }}</style>
+</head>
+<body>
+  <main class="markpdf-document">
+    {{ .Cover }}
+    {{ .TOC }}
+    <section class="markpdf-content">
+      {{ .Content }}
+    </section>
+  </main>
+  <script>{{ .HighlightJS }}</script>
+  <script>{{ .KaTeXJS }}</script>
+  <script>{{ .MermaidJS }}</script>
+  <script>
+    window.markpdfConfig = { mermaidTheme: "{{ .MermaidTheme }}" };
+  </script>
+  <script>{{ .RuntimeJS }}</script>
+</body>
+</html>

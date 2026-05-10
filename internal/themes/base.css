@@ -1,0 +1,523 @@
+/*
+ * base.css provides shared document structure, print fragmentation rules, code
+ * block styling, table behavior, and Mermaid/KaTeX layout used by every theme.
+ */
+:root {
+  --markpdf-bg: #ffffff;
+  --markpdf-text: #1a1a1a;
+  --markpdf-muted: #737373;
+  --markpdf-border: #d4d4d4;
+  --markpdf-accent: #1a1a1a;
+  --markpdf-code-bg: #f5f5f5;
+  --markpdf-base-font-size: 16px;
+  --markpdf-h1-size: 2.35rem;
+  --markpdf-h2-size: 1.35rem;
+  --markpdf-h3-size: 1.12rem;
+}
+
+html {
+  background: var(--markpdf-bg);
+  color: var(--markpdf-text);
+  font-size: var(--markpdf-base-font-size);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--markpdf-bg);
+  line-height: 1.65;
+  font-feature-settings: "kern" 1, "liga" 1;
+  orphans: 3;
+  widows: 3;
+}
+
+.markpdf-document {
+  background: var(--markpdf-bg);
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.markpdf-content {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--markpdf-heading, var(--markpdf-text));
+  line-height: 1.25;
+  margin: 2em 0 0.6em;
+  font-weight: 700;
+  /* Keep headings attached to their first paragraph/table/diagram when Chrome
+     paginates. Without both legacy and modern break properties, Chromium may
+     strand a heading above the footer on one page and its body on the next. */
+  page-break-after: avoid;
+  page-break-inside: avoid;
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+h1 + *,
+h2 + *,
+h3 + *,
+h4 + *,
+h5 + *,
+h6 + * {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+h1 {
+  font-size: var(--markpdf-h1-size);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: var(--markpdf-h2-size);
+  padding-top: 1em;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: var(--markpdf-h3-size);
+  line-height: 1.35;
+}
+
+p, ul, ol, blockquote, pre, table, dl {
+  margin: 0 0 1.25em;
+}
+
+ul, ol {
+  padding-left: 1.5em;
+}
+
+li {
+  margin: 0.35em 0;
+}
+
+li > ul, li > ol {
+  margin-bottom: 0;
+  margin-top: 0.35em;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--markpdf-border);
+  margin: 2.5em auto;
+  max-width: 60%;
+}
+
+a {
+  color: var(--markpdf-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.12em;
+}
+
+strong {
+  font-weight: 700;
+  color: var(--markpdf-heading, var(--markpdf-text));
+}
+
+em {
+  font-style: italic;
+}
+
+dt {
+  font-weight: 700;
+  margin-top: 0.75em;
+}
+
+dd {
+  margin-left: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+blockquote {
+  color: var(--markpdf-muted);
+  padding: 0.5em 0 0.5em 1.5em;
+  margin-left: 0;
+  border-left: 1.5px solid var(--markpdf-border);
+  font-style: italic;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+code {
+  background: var(--markpdf-code-bg);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+  padding: 0.15em 0.35em;
+  letter-spacing: -0.01em;
+}
+
+pre {
+  background: var(--markpdf-code-bg);
+  border-left: 2px solid var(--markpdf-border);
+  padding: 1em 1.25em;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  overflow-x: auto;
+  line-height: 1.5;
+  /* Preformatted content should preserve indentation but still wrap in print;
+     horizontal scrollbars do not help in a PDF. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+pre.markpdf-code-block {
+  /* The runtime adds data-language after normalizing aliases such as api,
+     commands, and partial. Reserve a top lane for that printed badge. */
+  position: relative;
+  padding-top: 1.85rem;
+}
+
+pre.markpdf-code-block::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.55rem;
+  right: 0.85rem;
+  color: var(--markpdf-muted);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+pre.markpdf-code-block:not([data-language])::before,
+pre.markpdf-code-block[data-language=""]::before {
+  content: none;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+pre code.hljs {
+  background: transparent !important;
+  color: inherit;
+  display: block;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+  table-layout: auto;
+  /* Tables are expensive to split cleanly in Chromium. Prefer moving a table
+     to the next page over slicing a row through the footer area. */
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.markpdf-table-wrapper {
+  margin: 0 0 1.25em;
+  max-width: 100%;
+  overflow-x: auto;
+  /* The runtime wraps tables so overflow and page-break rules apply to the
+     whole table, not just individual rows or cells. */
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.markpdf-table-wrapper table {
+  margin-bottom: 0;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tfoot {
+  display: table-footer-group;
+}
+
+tr {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+th, td {
+  padding: 0.65em 0.75em;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--markpdf-border);
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+th:first-child,
+td:first-child {
+  /* Prevent wide tables from crushing normal row labels into one-character
+     columns while still allowing long object keys to wrap in later columns. */
+  min-width: 7rem;
+}
+
+th {
+  font-weight: 600;
+  border-bottom-width: 2px;
+  border-bottom-color: var(--markpdf-text);
+}
+
+tr:last-child td {
+  border-bottom-width: 2px;
+  border-bottom-color: var(--markpdf-text);
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid, .math-display {
+  margin: 2em 0;
+  padding: 1.5em 0;
+  /* Diagrams/math are usually read as a unit. The oversized class below opts
+     out when a diagram is too large to fit reasonably on one page. */
+  page-break-inside: avoid;
+  break-inside: avoid;
+  text-align: center;
+  max-width: 100%;
+}
+
+.mermaid {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  overflow: visible;
+}
+
+.math-display {
+  border-top: 1px solid var(--markpdf-border);
+  border-bottom: 1px solid var(--markpdf-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.mermaid svg,
+.math-display .katex-display {
+  max-width: 100%;
+}
+
+.mermaid svg {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.markpdf-diagram-small svg {
+  max-width: min(100%, 520px);
+}
+
+.markpdf-diagram-wide svg {
+  width: 100% !important;
+}
+
+.markpdf-diagram-tall svg {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.markpdf-diagram-fit-page svg {
+  /* Runtime-computed cap for tall diagrams that can fit on one page after
+     scaling without becoming unreadable. */
+  max-height: var(--markpdf-diagram-max-height);
+}
+
+.markpdf-diagram-oversized {
+  /* Truly large diagrams must be allowed to fragment rather than forcing Chrome
+     to reserve a blank page before the diagram. */
+  page-break-inside: auto;
+  break-inside: auto;
+}
+
+.markpdf-heading-diagram-group {
+  /* Runtime wraps "heading + diagram" pairs so Chrome does not strand a section
+     title on one page and start the diagram on the next. */
+  page-break-inside: avoid;
+  break-inside: avoid-page;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
+}
+
+.markpdf-render-error {
+  border: 1px solid #dc2626;
+  border-radius: 0.7rem;
+  color: #991b1b;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  padding: 1rem;
+  text-align: left;
+}
+
+.markpdf-admonition {
+  background: color-mix(in srgb, var(--markpdf-accent) 8%, white);
+  border: 1px solid var(--markpdf-border);
+  border-left: 5px solid var(--markpdf-accent);
+  border-radius: 0.7rem;
+  margin: 1.25rem 0;
+  padding: 0.85rem 1rem;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.markpdf-admonition-title {
+  color: var(--markpdf-heading, var(--markpdf-text));
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.markpdf-admonition > :last-child {
+  margin-bottom: 0;
+}
+
+.markpdf-cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh;
+  page-break-after: always;
+  text-align: center;
+}
+
+.markpdf-cover h1 {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.markpdf-cover-author, .markpdf-cover-date {
+  color: var(--markpdf-muted);
+  font-size: 1.1rem;
+}
+
+.markpdf-cover-subtitle {
+  color: var(--markpdf-muted);
+  font-size: 1.35rem;
+  line-height: 1.35;
+  margin: -0.15rem 0 1.25rem;
+  max-width: 36rem;
+}
+
+.markpdf-toc {
+  margin: 0 0 2.5rem;
+  padding: 0 0 1.5rem;
+  page-break-after: always;
+  border-bottom: 1px solid var(--markpdf-border);
+}
+
+.markpdf-toc h2 {
+  border: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.markpdf-toc a {
+  text-decoration: none;
+}
+
+.markpdf-toc ol {
+  padding-left: 0;
+  list-style: none;
+  counter-reset: toc-item;
+}
+
+.markpdf-toc ol li {
+  margin: 0.4em 0;
+  counter-increment: toc-item;
+}
+
+.markpdf-toc ol li::before {
+  content: counter(toc-item) ". ";
+  color: var(--markpdf-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  html,
+  body,
+  .markpdf-document {
+    /* Warm themes need the page background on every print fragment, including
+       header/footer bands and continuation pages. */
+    background: var(--markpdf-bg) !important;
+  }
+
+  .markpdf-document {
+    min-height: auto;
+    overflow: visible;
+    position: relative;
+    z-index: 0;
+  }
+
+  .markpdf-content {
+    /* The PDF page margins already define printable width. Remove the screen
+       max-width in print so content does not feel artificially narrow. */
+    max-width: none;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid-page;
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  h1 {
+    padding-top: 0.08em;
+  }
+
+  .markpdf-content > h1:first-child {
+    padding-top: 0.12in;
+  }
+
+  .mermaid {
+    margin: 1.35em 0;
+    padding: 0.75em 0;
+    overflow: visible;
+  }
+
+  .markpdf-toc {
+    /* TOC pages can continue across page breaks; clone padding prevents the
+       first item on a continuation page from sitting under the native header. */
+    padding-top: 0.18in;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .markpdf-table-wrapper,
+  .mermaid,
+  .math-display,
+  blockquote,
+  pre {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  .markpdf-table-wrapper {
+    overflow: visible;
+  }
+
+  table {
+    font-size: 0.82rem;
+  }
+
+  th, td {
+    padding: 0.45em 0.55em;
+  }
+}
