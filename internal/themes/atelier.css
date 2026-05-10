@@ -1,0 +1,182 @@
+/*
+ * atelier.css defines the Atelier theme for warm, gallery-catalog-style PDFs.
+ * Atelier — Artful warmth
+ * Warm ivory tones, terracotta accents, generous whitespace.
+ * Inspired by gallery catalogs, artist books, and fine stationery.
+ */
+
+body {
+  font-family: "Crimson Text", "Crimson Pro", Georgia, "Times New Roman", serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Crimson Text", "Crimson Pro", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+}
+
+.markpdf-document {
+  padding: 72px 64px;
+}
+
+:root {
+  --markpdf-bg: #fdfbf7;
+  --markpdf-text: #2d2926;
+  --markpdf-muted: #8a8279;
+  --markpdf-border: #e8e0d5;
+  --markpdf-accent: #c45c3e;
+  --markpdf-code-bg: #f5f0e8;
+  --markpdf-heading: #1a1714;
+}
+
+html {
+  background: var(--markpdf-bg);
+}
+
+body {
+  line-height: 1.7;
+}
+
+h1 {
+  font-size: var(--markpdf-h1-size);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 0;
+  font-variant-numeric: oldstyle-nums;
+  color: var(--markpdf-heading);
+}
+
+h2 {
+  font-size: var(--markpdf-h2-size);
+  font-weight: 600;
+  padding-top: 1em;
+  padding-bottom: 0.4em;
+  border-bottom: none;
+  margin-top: 2.5em;
+  color: var(--markpdf-heading);
+}
+
+h3 {
+  font-size: var(--markpdf-h3-size);
+  font-weight: 600;
+  font-style: italic;
+  color: var(--markpdf-accent);
+}
+
+p {
+  line-height: 1.75;
+}
+
+ul {
+  list-style: none;
+  padding-left: 1.25em;
+}
+
+ul li {
+  position: relative;
+}
+
+ul li::before {
+  content: "•";
+  position: absolute;
+  left: -1.25em;
+  color: var(--markpdf-accent);
+  font-size: 0.85em;
+}
+
+hr {
+  border: 0;
+  text-align: center;
+  margin: 2.5em auto;
+  max-width: 100%;
+}
+
+hr::before {
+  content: "• • •";
+  color: var(--markpdf-border);
+  letter-spacing: 1em;
+}
+
+blockquote {
+  border-left: 1px solid var(--markpdf-accent);
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  color: var(--markpdf-muted);
+  font-style: italic;
+  font-size: 1.05rem;
+}
+
+pre {
+  border-left: 1px solid var(--markpdf-accent);
+  background: var(--markpdf-code-bg);
+  border-radius: 0;
+}
+
+code {
+  background: var(--markpdf-code-bg);
+  border-radius: 0;
+  color: var(--markpdf-accent);
+}
+
+pre code {
+  color: var(--markpdf-text);
+}
+
+.mermaid {
+  background: transparent;
+  border: 0;
+  padding: 1.5em 0;
+}
+
+.math-display {
+  border-top: 1px solid var(--markpdf-border);
+  border-bottom: 1px solid var(--markpdf-border);
+  background: transparent;
+  padding: 1.5em 0;
+}
+
+table th {
+  border-bottom: 2px solid var(--markpdf-heading);
+  font-weight: 600;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.04em;
+  font-size: 0.85rem;
+}
+
+tr:last-child td {
+  border-bottom: 2px solid var(--markpdf-heading);
+}
+
+.markpdf-cover {
+  align-items: center;
+}
+
+.markpdf-cover h1 {
+  font-size: 3.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+.markpdf-cover-subtitle {
+  color: var(--markpdf-muted);
+  font-size: 1.32rem;
+  font-style: italic;
+}
+
+.markpdf-cover-author, .markpdf-cover-date {
+  font-style: italic;
+  color: var(--markpdf-muted);
+}
+
+.markpdf-cover::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 60px;
+  background: var(--markpdf-accent);
+  margin-top: 2rem;
+}
+
+.markpdf-toc {
+  border-bottom: 1px solid var(--markpdf-border);
+}

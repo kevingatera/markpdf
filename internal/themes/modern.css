@@ -1,0 +1,174 @@
+/*
+ * modern.css defines the Modern theme used for clean editorial PDFs.
+ * Modern — Editorial sophistication
+ * Serif headings, clean sans body, strong horizontal architecture.
+ * Inspired by quality magazines and digital publications.
+ */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif;
+  font-weight: 600;
+}
+
+.markpdf-document {
+  padding: 64px 56px;
+}
+
+:root {
+  --markpdf-accent: #0033a0;
+  --markpdf-text: #0f0f0f;
+  --markpdf-muted: #5a5a5a;
+  --markpdf-border: #d9d9d9;
+  --markpdf-code-bg: #f7f8f9;
+  --markpdf-heading: #000000;
+}
+
+html {
+  background: #ffffff;
+}
+
+h1 {
+  font-size: var(--markpdf-h1-size);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 0;
+  font-variant-numeric: oldstyle-nums;
+}
+
+h2 {
+  font-size: var(--markpdf-h2-size);
+  font-weight: 600;
+  padding-bottom: 0.5em;
+  border-bottom: none;
+  margin-top: 2.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+h3 {
+  font-size: var(--markpdf-h3-size);
+  font-weight: 600;
+  color: var(--markpdf-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+p {
+  line-height: 1.7;
+}
+
+ul {
+  list-style: none;
+  padding-left: 1.25em;
+}
+
+ul li {
+  position: relative;
+}
+
+ul li::before {
+  content: "–";
+  position: absolute;
+  left: -1.25em;
+  color: var(--markpdf-muted);
+}
+
+hr {
+  border-top: 2px solid #111111;
+  margin: 2.5em 0;
+  max-width: 100%;
+}
+
+blockquote {
+  border-left: 2px solid var(--markpdf-accent);
+  padding-left: 1.5em;
+  color: #444444;
+  font-style: normal;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+}
+
+pre {
+  border-left: 2px solid var(--markpdf-accent);
+  background: var(--markpdf-code-bg);
+  border-radius: 0;
+}
+
+code {
+  background: transparent;
+  border-bottom: 1px solid var(--markpdf-border);
+  border-radius: 0;
+  padding: 0.1em 0;
+  color: var(--markpdf-accent);
+}
+
+pre code {
+  border: none;
+  color: var(--markpdf-text);
+}
+
+.mermaid {
+  background: transparent;
+  border: 0;
+  padding: 1.5em 0;
+}
+
+.math-display {
+  border-top: 2px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
+  background: transparent;
+  padding: 1.5em 0;
+}
+
+table th {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  border-bottom: 2px solid #111111;
+}
+
+tr:last-child td {
+  border-bottom: 2px solid #111111;
+}
+
+.markpdf-cover {
+  align-items: center;
+}
+
+.markpdf-cover h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+}
+
+.markpdf-cover-subtitle {
+  color: #3d4852;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.28rem;
+  letter-spacing: -0.01em;
+}
+
+.markpdf-cover::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 3px;
+  background: var(--markpdf-accent);
+  margin-top: 0.5rem;
+}
+
+.markpdf-toc {
+  border-bottom: 1px solid var(--markpdf-border);
+}
+
+.markpdf-toc h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.5rem;
+}

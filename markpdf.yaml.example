@@ -1,0 +1,23 @@
+# markpdf.yaml.example documents the supported configuration shape for page
+# layout, themes, cover metadata, headers/footers, and Mermaid.
+page:
+  size: A4
+  orientation: portrait
+  margins:
+    top: 20mm
+    bottom: 20mm
+    left: 25mm
+    right: 25mm
+theme: modern # modern | academic | github | atelier | rideau
+custom_css: ""
+toc: true
+cover:
+  enabled: false
+  title: My Document
+  subtitle: Optional subtitle
+  author: Jane Doe
+  date: auto
+header: ""
+footer: "{{page}} / {{pages}}"
+mermaid:
+  theme: default
