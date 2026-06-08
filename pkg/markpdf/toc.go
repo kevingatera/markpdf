@@ -51,10 +51,7 @@ func buildTOC(content string) string {
 	b.WriteString(`<nav class="markpdf-toc"><h2>Contents</h2><ol>`)
 
 	// First heading opens the outermost <li>.
-	b.WriteString(fmt.Sprintf(
-		`<li class="toc-level-%d"><a href="#%s">%s</a>`,
-		headings[0].Level, headings[0].ID, headings[0].Text,
-	))
+	writeTOCItem(&b, headings[0])
 	prevLevel := headings[0].Level
 
 	for _, h := range headings[1:] {
@@ -72,10 +69,7 @@ func buildTOC(content string) string {
 			// Same level — close previous <li>, open new sibling.
 			b.WriteString(`</li>`)
 		}
-		b.WriteString(fmt.Sprintf(
-			`<li class="toc-level-%d"><a href="#%s">%s</a>`,
-			h.Level, h.ID, h.Text,
-		))
+		writeTOCItem(&b, h)
 		prevLevel = h.Level
 	}
 
@@ -91,4 +85,11 @@ func buildTOC(content string) string {
 	b.WriteString(`</ol></nav>`)
 
 	return b.String()
+}
+
+func writeTOCItem(b *strings.Builder, h heading) {
+	b.WriteString(fmt.Sprintf(
+		`<li class="toc-level-%d"><a href="#%s"><span class="toc-text">%s</span><span class="toc-leader"></span><span class="toc-page" data-target="%s"></span></a>`,
+		h.Level, h.ID, h.Text, h.ID,
+	))
 }

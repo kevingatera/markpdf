@@ -269,5 +269,5 @@ tr:last-child td {
 }
 
 .markpdf-toc ol ol li a {
-  color: var(--rideau-blue, var(--markpdf-accent));
+  color: var(--rideau-ink, var(--markpdf-text));
 }

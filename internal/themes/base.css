@@ -507,6 +507,28 @@ img, svg {
 .markpdf-toc a {
   text-decoration: none;
   overflow-wrap: anywhere;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+
+.markpdf-toc .toc-text {
+  flex-shrink: 1;
+}
+
+.markpdf-toc .toc-leader {
+  flex: 1;
+  border-bottom: 1px dotted var(--markpdf-border);
+  min-width: 1.5em;
+  position: relative;
+  top: -0.25em;
+}
+
+.markpdf-toc .toc-page {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--markpdf-muted);
+  font-size: 0.9em;
 }
 
 .markpdf-toc ol {
@@ -534,7 +556,6 @@ img, svg {
   /* Nested entries are visually subordinate: smaller, tighter. */
   margin: 0.2em 0;
   font-size: 0.88em;
-  color: var(--markpdf-muted);
 }
 
 .markpdf-toc ol ol li a {

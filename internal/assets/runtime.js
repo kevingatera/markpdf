@@ -22,6 +22,7 @@
       highlightCodeBlocks();
       renderMath();
       await renderMermaidDiagrams();
+      populateTOCPageNumbers();
     } catch (error) {
       window.markpdfRenderError = errorMessage(error);
       console.error(error);
@@ -870,6 +871,46 @@
 
     const parsed = parseFloat(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  // Populate TOC page numbers by measuring where each target heading lands
+  // relative to the page height. Runs after all content rendering so diagrams
+  // and tables have their final layout dimensions.
+  function populateTOCPageNumbers() {
+    const spans = document.querySelectorAll(".markpdf-toc .toc-page[data-target]");
+    if (!spans.length) return;
+
+    const print = (config.print || {});
+    // Page height in CSS pixels. Fall back to A4 with 24mm top+bottom margins.
+    const pageHeight = print.portraitContentHeight || ((11.69 - 2 * 24 / 25.4) * 96);
+
+    // Count pages consumed by cover and TOC itself (they force page breaks).
+    let prefixPages = 0;
+    const cover = document.querySelector(".markpdf-cover");
+    if (cover) prefixPages += 1;
+    const toc = document.querySelector(".markpdf-toc");
+    if (toc) {
+      // TOC may span multiple pages; estimate from its rendered height.
+      const tocRect = toc.getBoundingClientRect();
+      prefixPages += Math.max(1, Math.ceil(tocRect.height / pageHeight));
+    }
+
+    // The content starts after prefix pages. Measure each heading's offset
+    // from the content top to determine which page it falls on.
+    const content = document.querySelector(".markpdf-content");
+    if (!content) return;
+    const contentTop = content.getBoundingClientRect().top;
+
+    spans.forEach((span) => {
+      const targetID = span.getAttribute("data-target");
+      const heading = document.getElementById(targetID);
+      if (!heading) return;
+
+      const headingTop = heading.getBoundingClientRect().top;
+      const offset = headingTop - contentTop;
+      const page = prefixPages + 1 + Math.floor(Math.max(0, offset) / pageHeight);
+      span.textContent = String(page);
+    });
   }
 
   function renderError(element, renderer, error, source) {
