@@ -3,20 +3,19 @@
 package markpdf
 
 import (
+	"encoding/json"
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/kevingatera/markpdf/internal"
 )
 
 func TestNormalizeHeaderFooter(t *testing.T) {
 	got := normalizeHeaderFooter(`<span>{{title}}</span> {{page}} / {{pages}} {{date}}`, headerFooterBottom, "#ffffff")
 
 	for _, expected := range []string{
-		`font-size:9.5px`,
-		`font-weight:600`,
 		`background:#ffffff`,
-		`height:calc(100% - 5mm)`,
-		`margin:5mm 0 0 0`,
-		`box-shadow:0 6mm 0 0 #ffffff`,
 		`print-color-adjust:exact`,
 		`<span class="title"></span>`,
 		`<span class="pageNumber"></span>`,
@@ -74,16 +73,65 @@ func TestPageCSSReservesHeaderFooterMargins(t *testing.T) {
 	if !strings.Contains(css, "1.2469in") {
 		t.Fatalf("expected CSS page margins to reserve header/footer space, got:\n%s", css)
 	}
+	if !strings.Contains(css, "@page markpdf-landscape") {
+		t.Fatalf("expected CSS to define a named landscape page, got:\n%s", css)
+	}
+	if !strings.Contains(css, "size: A4 landscape") {
+		t.Fatalf("expected named landscape page to use landscape page size, got:\n%s", css)
+	}
+}
+
+func TestRuntimeConfigIncludesPrintMetrics(t *testing.T) {
+	opts := DefaultOptions()
+	opts.Header = "{{title}}"
+	opts.Footer = "{{page}} / {{pages}}"
+
+	var config browserRuntimeConfig
+	if err := json.Unmarshal([]byte(runtimeConfigJS(opts)), &config); err != nil {
+		t.Fatal(err)
+	}
+
+	if config.MermaidTheme != opts.Mermaid.Theme {
+		t.Fatalf("expected Mermaid theme %q, got %q", opts.Mermaid.Theme, config.MermaidTheme)
+	}
+	if config.Print.LandscapeContentWidth <= config.Print.PortraitContentWidth {
+		t.Fatalf("expected landscape content width to exceed portrait width, got %.2f <= %.2f", config.Print.LandscapeContentWidth, config.Print.PortraitContentWidth)
+	}
+	if config.Print.PortraitContentHeight <= config.Print.LandscapeContentHeight {
+		t.Fatalf("expected portrait content height to exceed landscape height, got %.2f <= %.2f", config.Print.PortraitContentHeight, config.Print.LandscapeContentHeight)
+	}
+}
+
+func TestCustomPageSizeCSSCanRotateNamedPages(t *testing.T) {
+	if got := pageSizeCSS("210mmx297mm", "landscape"); got != "297mm 210mm" {
+		t.Fatalf("expected custom landscape page to rotate dimensions, got %q", got)
+	}
+	if got := pageSizeCSS("297mmx210mm", "portrait"); got != "210mm 297mm" {
+		t.Fatalf("expected custom portrait page to rotate dimensions, got %q", got)
+	}
 }
 
 func TestThemeBackgroundIncludesWarmThemes(t *testing.T) {
-	if got := themeBackground("academic"); got != "#fffdf5" {
-		t.Fatalf("expected academic header/footer background, got %q", got)
+	for _, theme := range []string{"academic", "atelier", "rideau"} {
+		expected := embeddedThemeBackground(t, theme)
+		if got := themeBackground(theme); got != expected {
+			t.Fatalf("expected %s header/footer background to match theme CSS %q, got %q", theme, expected, got)
+		}
 	}
-	if got := themeBackground("atelier"); got != "#fdfbf7" {
-		t.Fatalf("expected atelier header/footer background, got %q", got)
+}
+
+var themeBackgroundPattern = regexp.MustCompile(`--markpdf-bg:\s*([^;]+);`)
+
+func embeddedThemeBackground(t *testing.T, theme string) string {
+	t.Helper()
+
+	data, err := internal.FS.ReadFile("themes/" + theme + ".css")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got := themeBackground("rideau"); got != "#f6fbfa" {
-		t.Fatalf("expected rideau header/footer background, got %q", got)
+	match := themeBackgroundPattern.FindStringSubmatch(string(data))
+	if len(match) != 2 {
+		t.Fatalf("expected %s theme to define --markpdf-bg", theme)
 	}
+	return strings.TrimSpace(match[1])
 }

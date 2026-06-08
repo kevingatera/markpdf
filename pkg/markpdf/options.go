@@ -5,17 +5,19 @@ package markpdf
 import "time"
 
 type Options struct {
-	Page      PageOptions    `yaml:"page"`
-	Theme     string         `yaml:"theme"`
-	CustomCSS string         `yaml:"custom_css"`
-	TOC       bool           `yaml:"toc"`
-	Cover     CoverOptions   `yaml:"cover"`
-	Header    string         `yaml:"header"`
-	Footer    string         `yaml:"footer"`
-	Mermaid   MermaidOptions `yaml:"mermaid"`
-	Title     string         `yaml:"title"`
-	Subtitle  string         `yaml:"subtitle"`
-	Author    string         `yaml:"author"`
+	Page           PageOptions    `yaml:"page"`
+	Theme          string         `yaml:"theme"`
+	CustomCSS      string         `yaml:"custom_css"`
+	TOC            bool           `yaml:"toc"`
+	Cover          CoverOptions   `yaml:"cover"`
+	Header         string         `yaml:"header"`
+	Footer         string         `yaml:"footer"`
+	HighlightTheme string         `yaml:"highlight_theme"`
+	Mermaid        MermaidOptions `yaml:"mermaid"`
+	Title          string         `yaml:"title"`
+	Subtitle       string         `yaml:"subtitle"`
+	Author         string         `yaml:"author"`
+	DumpHTMLPath   string         `yaml:"-"` // write intermediate HTML here instead of generating PDF (CLI only)
 }
 
 type PageOptions struct {

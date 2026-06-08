@@ -46,19 +46,54 @@
 
   function groupDiagramHeadings() {
     document.querySelectorAll(".markpdf-content .mermaid").forEach((diagram) => {
-      const heading = previousMeaningfulElement(diagram);
+      const heading = headingForDiagramGroup(diagram);
       if (!heading || !/^H[1-6]$/.test(heading.tagName) || heading.parentElement.classList.contains("markpdf-heading-diagram-group")) {
         return;
       }
 
       // Chromium respects break-inside more consistently on an explicit block
-      // wrapper than on a heading followed by a rendered SVG.
+      // wrapper than on a loose heading followed by rendered SVG content.
+      // Portrait page-hinted diagrams may include a short paragraph lead-in, so
+      // move every sibling from the heading through the diagram into the group.
       const group = document.createElement("div");
       group.className = "markpdf-heading-diagram-group";
       heading.parentNode.insertBefore(group, heading);
-      group.appendChild(heading);
-      group.appendChild(diagram);
+      let child = heading;
+      while (child) {
+        const next = child.nextSibling;
+        group.appendChild(child);
+        if (child === diagram) break;
+        child = next;
+      }
     });
+  }
+
+  function headingForDiagramGroup(diagram) {
+    const hints = mermaidPrintHints(diagram.textContent);
+    if (hints.forcePage && !hints.forceLandscape && !hints.detachHeading) {
+      // A portrait page hint is usually author intent for "this section's
+      // diagram deserves breathing room." Keep a short textual lead-in with the
+      // diagram so the preceding page is not mostly blank.
+      return nearestLeadInHeading(diagram);
+    }
+    return previousMeaningfulElement(diagram);
+  }
+
+  function nearestLeadInHeading(diagram) {
+    let current = diagram.previousElementSibling;
+    while (current) {
+      if (/^H[1-6]$/.test(current.tagName)) return current;
+      if (!isDiagramLeadInElement(current)) return null;
+      current = current.previousElementSibling;
+    }
+    return null;
+  }
+
+  function isDiagramLeadInElement(element) {
+    // Keep this intentionally narrow. Pulling lists, tables, or code blocks
+    // into an avoid-break diagram wrapper can create the same blank-page
+    // problems the wrapper is meant to prevent.
+    return element.tagName === "P" || element.tagName === "HR";
   }
 
   function previousMeaningfulElement(element) {
@@ -197,28 +232,85 @@
 
   function httpLanguage(hljs) {
     // The embedded highlight.js build may not include HTTP. This small grammar
-    // covers request/status lines and headers for API documentation examples.
+    // covers request/status lines, wrapped query strings, and headers for API
+    // documentation examples. It intentionally highlights parts of a request
+    // instead of treating the whole line as "meta" so examples like
+    // `GET http://localhost:8000/chat-stream?message=...` have useful contrast.
+    const queryParts = [
+      {
+        className: "operator",
+        begin: /[?&]/
+      },
+      {
+        className: "attr",
+        begin: /[?&]?[A-Za-z_][\w.-]*(?==)/
+      },
+      {
+        className: "string",
+        begin: /=/,
+        end: /(?=&|\s|$)/,
+        excludeBegin: true
+      }
+    ];
+
     return {
       name: "HTTP/API",
       aliases: ["api", "endpoint", "http", "http-request", "http-response", "request", "response", "rest"],
       contains: [
         {
           className: "meta",
-          begin: /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\S+\s+HTTP\/\d(?:\.\d)?/m
+          begin: /^HTTP\/\d(?:\.\d)?\s+\d{3}.*$/m,
+          contains: [
+            {
+              className: "number",
+              begin: /\b\d{3}\b/
+            }
+          ]
         },
         {
-          className: "meta",
-          begin: /^HTTP\/\d(?:\.\d)?\s+\d{3}.*$/m
-        },
-        {
-          className: "attr",
-          begin: /^[A-Za-z0-9-]+(?=:)/m
-        },
-        {
-          className: "string",
-          begin: /:\s*/,
+          begin: /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+/m,
           end: /$/,
-          excludeBegin: true
+          returnBegin: true,
+          contains: [
+            {
+              className: "keyword",
+              begin: /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)(?=\s)/
+            },
+            {
+              className: "string",
+              begin: /https?:\/\/[^\s?&]+|\/[^\s?&]*/
+            },
+            {
+              className: "meta",
+              begin: /HTTP\/\d(?:\.\d)?/
+            },
+            ...queryParts
+          ]
+        },
+        {
+          // Authors often wrap a long request after `?` to keep examples readable.
+          // Treat the continuation as query parameters instead of plain text.
+          begin: /^[?&]?[A-Za-z_][\w.-]*=/m,
+          end: /$/,
+          returnBegin: true,
+          contains: queryParts
+        },
+        {
+          begin: /^[A-Za-z0-9-]+:\s*/m,
+          end: /$/,
+          returnBegin: true,
+          contains: [
+            {
+              className: "attr",
+              begin: /^[A-Za-z0-9-]+(?=:)/
+            },
+            {
+              className: "string",
+              begin: /:\s*/,
+              end: /$/,
+              excludeBegin: true
+            }
+          ]
         },
         {
           className: "literal",
@@ -286,6 +378,7 @@
       "yml": "yaml"
     };
 
+    if (!normalized) return inferUnlabeledLanguage(source);
     // "api" is ambiguous in prose, so infer from the block body when possible:
     // HTTP request/response, JSON payload, or YAML-ish configuration.
     if (isAPILanguage(normalized)) return inferAPILanguage(source);
@@ -299,12 +392,31 @@
   function inferAPILanguage(source) {
     const trimmed = source.trim();
 
-    if (/^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\S+/i.test(trimmed)) return "markpdf-http";
-    if (/^HTTP\/\d(?:\.\d)?\s+\d{3}/i.test(trimmed)) return "markpdf-http";
+    if (looksLikeHTTPRequest(trimmed)) return "markpdf-http";
+    if (looksLikeHTTPResponse(trimmed)) return "markpdf-http";
     if (/^[\[{]/.test(trimmed)) return "json";
     if (/^[A-Za-z0-9_.-]+:\s+/m.test(trimmed)) return "yaml";
 
     return "markpdf-http";
+  }
+
+  function inferUnlabeledLanguage(source) {
+    const trimmed = source.trim();
+    if (!trimmed) return "";
+
+    // Only infer unlabeled snippets when the shape is strong. Generic prose,
+    // stack traces, and code in other languages should still be left to hljs.
+    if (looksLikeHTTPRequest(trimmed) || looksLikeHTTPResponse(trimmed)) return "markpdf-http";
+    if (/^[\[{]/.test(trimmed)) return "json";
+    return "";
+  }
+
+  function looksLikeHTTPRequest(source) {
+    return /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(?:https?:\/\/|\/)\S+/im.test(source);
+  }
+
+  function looksLikeHTTPResponse(source) {
+    return /^HTTP\/\d(?:\.\d)?\s+\d{3}/im.test(source);
   }
 
   function codeLanguageLabel(language) {
@@ -317,6 +429,9 @@
       "http-request": "HTTP",
       "http-response": "HTTP",
       "json": "JSON",
+      "markpdf-command": "COMMAND",
+      "markpdf-http": "HTTP",
+      "markpdf-template": "TEMPLATE",
       "partial": "PARTIAL",
       "powershell": "POWERSHELL",
       "ps1": "POWERSHELL",
@@ -359,19 +474,7 @@
   async function renderMermaidDiagrams() {
     if (!window.mermaid) return;
 
-    window.mermaid.initialize({
-      startOnLoad: false,
-      theme: config.mermaidTheme || "default",
-      flowchart: {
-        // Mermaid's default max-width behavior fights our own print scaling.
-        // Fixed spacing gives tall state diagrams a chance to fit one page.
-        useMaxWidth: false,
-        htmlLabels: true,
-        nodeSpacing: 32,
-        rankSpacing: 36,
-        padding: 8
-      }
-    });
+    window.mermaid.initialize(mermaidRenderConfig({}));
 
     const diagrams = Array.from(document.querySelectorAll(".mermaid"));
     for (const [index, element] of diagrams.entries()) {
@@ -381,15 +484,53 @@
 
   async function renderMermaidDiagram(element, index) {
     const source = normalizeMermaidSource(element.textContent);
+    const stats = mermaidSourceStats(source);
 
     try {
+      window.mermaid.initialize(mermaidRenderConfig(stats));
       const result = await window.mermaid.render(`markpdf-mermaid-${index}`, source, element);
       element.innerHTML = result.svg;
       if (result.bindFunctions) result.bindFunctions(element);
-      fitDiagram(element);
+      fitDiagram(element, stats);
     } catch (error) {
       renderError(element, "Mermaid", error, source);
     }
+  }
+
+  function mermaidRenderConfig(stats) {
+    const flowchart = {
+      // Mermaid's default max-width behavior fights our own print scaling.
+      // Fixed spacing gives tall state diagrams a chance to fit one page.
+      useMaxWidth: false,
+      htmlLabels: true,
+      nodeSpacing: 32,
+      rankSpacing: 36,
+      padding: 8
+    };
+
+    if (shouldUseBalancedFlowchartLayout(stats)) {
+      // Subgraph-heavy system diagrams can become extremely wide and shallow
+      // under Mermaid's default spacing. The generous vertical spacing is only
+      // useful when markpdf is free to move the diagram to landscape; diagrams
+      // explicitly hinted as portrait pages need a denser layout so internal
+      // whitespace does not consume the whole page.
+      const portraitPageHint = stats.forcePage && !stats.forceLandscape;
+      flowchart.nodeSpacing = portraitPageHint ? 8 : 12;
+      flowchart.rankSpacing = portraitPageHint ? 36 : 176;
+      flowchart.wrappingWidth = portraitPageHint ? 96 : 112;
+      flowchart.padding = portraitPageHint ? 24 : 6;
+    }
+
+    return {
+      startOnLoad: false,
+      theme: config.mermaidTheme || "default",
+      flowchart
+    };
+  }
+
+  function shouldUseBalancedFlowchartLayout(stats) {
+    if (!stats.isFlowchart) return false;
+    return stats.subgraphs >= 5 || (stats.lines >= 56 && stats.edges >= 18);
   }
 
   function normalizeMermaidSource(source) {
@@ -400,9 +541,11 @@
   }
 
   // Mermaid emits SVGs with wildly different aspect ratios; this keeps them printable.
-  function fitDiagram(element) {
+  function fitDiagram(element, stats) {
     const svg = element.querySelector("svg");
     if (!svg) return;
+
+    trimMermaidSvgViewport(svg);
 
     const size = readSvgSize(svg);
     if (!size.width || !size.height) return;
@@ -418,7 +561,31 @@
       element.clientWidth ||
       (element.parentElement && element.parentElement.clientWidth) ||
       size.width;
-    const layout = diagramLayout(size.width, size.height, containerWidth);
+    const print = printMetrics(containerWidth);
+    const useLandscape = shouldUseLandscapePage(size, stats, print);
+    const useForcedPage = useLandscape || stats.forcePage;
+    const layoutWidth = useLandscape ? Math.max(containerWidth, print.landscapeContentWidth) : containerWidth;
+    const layoutHeight = useLandscape
+      ? landscapeDiagramMaxHeight(size, print)
+      : portraitForcedDiagramMaxHeight(stats, print);
+    const layout = diagramLayout(size.width, size.height, layoutWidth, layoutHeight);
+
+    if (useLandscape) {
+      // Chromium still lays out the element in the surrounding portrait flow
+      // before assigning it to the named landscape page. Expand and offset the
+      // block so the SVG is centered in the landscape printable area instead of
+      // overflowing to the right from a portrait-width container.
+      const landscapeBleed = Math.max(0, (layoutWidth - containerWidth) / 2);
+      element.style.width = `${Math.round(layoutWidth)}px`;
+      element.style.maxWidth = "none";
+      element.style.marginLeft = `-${Math.round(landscapeBleed)}px`;
+      element.style.marginRight = `-${Math.round(landscapeBleed)}px`;
+    } else {
+      element.style.removeProperty("width");
+      element.style.removeProperty("max-width");
+      element.style.removeProperty("margin-left");
+      element.style.removeProperty("margin-right");
+    }
 
     svg.style.width = `${Math.round(layout.width)}px`;
     svg.style.maxWidth = "100%";
@@ -436,9 +603,171 @@
     element.classList.toggle("markpdf-diagram-tall", layout.ratio < 0.65);
     element.classList.toggle("markpdf-diagram-fit-page", layout.mode === "fit-page");
     element.classList.toggle("markpdf-diagram-oversized", layout.mode === "oversized");
+    element.classList.toggle("markpdf-diagram-landscape", useLandscape);
+    applyDiagramPageClass(element, useLandscape, useForcedPage, layout.mode === "oversized", stats.detachHeading);
 
     const isSmallDiagram = size.width < containerWidth * 0.72 && size.height < layout.maxReadableHeight * 0.72;
     element.classList.toggle("markpdf-diagram-small", isSmallDiagram);
+  }
+
+  function printMetrics(containerWidth) {
+    // These values are calculated in Go from the effective print page and
+    // margin settings. Fallbacks keep programmatic HTML tests usable if the
+    // runtime is embedded without the full markpdf template.
+    const print = config.print || {};
+    const portraitWidth = positiveNumber(print.portraitContentWidth, containerWidth || 780);
+    const portraitHeight = positiveNumber(print.portraitContentHeight, Math.max(720, portraitWidth * 1.25));
+    const landscapeWidth = positiveNumber(print.landscapeContentWidth, Math.max(portraitWidth, portraitWidth * 1.42));
+    const landscapeHeight = positiveNumber(print.landscapeContentHeight, Math.max(420, portraitHeight * 0.72));
+
+    return {
+      portraitContentWidth: portraitWidth,
+      portraitContentHeight: portraitHeight,
+      landscapeContentWidth: landscapeWidth,
+      landscapeContentHeight: landscapeHeight
+    };
+  }
+
+  function positiveNumber(value, fallback) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
+  function shouldUseLandscapePage(size, stats, print) {
+    // Landscape is only helpful for complex diagrams that are wider than the
+    // portrait printable area. Tall state charts should stay portrait so they
+    // can use the existing page-fit scaling instead of becoming shorter.
+    const ratio = size.width / size.height;
+    if (stats.forceLandscape) return true;
+    if (stats.forcePage) return false;
+    if (!stats.isFlowchart) return false;
+    if (ratio < 0.85) return false;
+    if (print.landscapeContentWidth < print.portraitContentWidth * 1.16) return false;
+
+    const tooShallowToBenefit = size.height < 300 || stats.lines < 52;
+    if (tooShallowToBenefit) return false;
+
+    const widerThanPortrait = size.width > print.portraitContentWidth * 1.28;
+    const complexEnough = stats.subgraphs >= 5 || stats.edges >= 18;
+    return widerThanPortrait && complexEnough;
+  }
+
+  function mermaidSourceStats(source) {
+    // Source size is a useful proxy for graph complexity, but init directives
+    // and style-only lines should not push a simple diagram onto its own page.
+    const hints = mermaidPrintHints(source);
+    const lines = (source || "")
+      .split(/\n/)
+      .filter((line) => {
+        const trimmed = line.trim();
+        return trimmed && !trimmed.startsWith("%%") && !trimmed.startsWith("style ");
+      });
+
+    return {
+      lines: lines.length,
+      edges: lines.filter((line) => /-->|---|-.->|==>/.test(line)).length,
+      subgraphs: lines.filter((line) => /^\s*subgraph\b/i.test(line)).length,
+      isFlowchart: lines.some((line) => /^\s*(?:flowchart|graph)\b/i.test(line)),
+      forcePage: hints.forcePage,
+      forceLandscape: hints.forceLandscape,
+      detachHeading: hints.detachHeading
+    };
+  }
+
+  function mermaidPrintHints(source) {
+    // Authors sometimes know a diagram needs print treatment that heuristics
+    // should not apply globally. Mermaid ignores %% comments, so these hints
+    // are safe in normal Mermaid renderers while giving markpdf precise control.
+    const hints = { forcePage: false, forceLandscape: false, detachHeading: false };
+    (source || "").split(/\n/).forEach((line) => {
+      const match = line.match(/^\s*%%\s*markpdf\s*:\s*(.+)$/i);
+      if (!match) return;
+
+      const tokens = match[1].toLowerCase().split(/[\s,]+/);
+      hints.forceLandscape = hints.forceLandscape || tokens.includes("landscape");
+      hints.forcePage = hints.forcePage ||
+        hints.forceLandscape ||
+        tokens.includes("page") ||
+        tokens.includes("page-break");
+      hints.detachHeading = hints.detachHeading ||
+        tokens.includes("heading-before") ||
+        tokens.includes("detach-heading") ||
+        tokens.includes("diagram-only");
+    });
+    return hints;
+  }
+
+  function portraitForcedDiagramMaxHeight(stats, print) {
+    // A page-hinted portrait diagram is expected to use most of its own page.
+    // Keep unhinted diagrams on the more conservative readability caps so
+    // ordinary inline charts do not suddenly dominate surrounding text.
+    if (!stats.forcePage || stats.forceLandscape) return 0;
+    const headingReserve = stats.detachHeading ? 120 : 150;
+    return Math.max(420, print.portraitContentHeight - headingReserve);
+  }
+
+  function landscapeDiagramMaxHeight(size, print) {
+    // Do not squeeze a diagram just because it moved to landscape. Only cap it
+    // when the rendered SVG would overflow the landscape content height.
+    const naturalLandscapeHeight = Math.min(size.width, print.landscapeContentWidth) / (size.width / size.height);
+    const availableHeight = Math.max(340, print.landscapeContentHeight - 12);
+    if (naturalLandscapeHeight <= availableHeight) return 0;
+    return availableHeight;
+  }
+
+  function applyDiagramPageClass(element, useLandscape, useForcedPage, isOversized, detachHeadingHint) {
+    // Landscape page changes must apply to only the diagram so section headings
+    // can stay in portrait flow. Portrait forced pages can keep a short heading
+    // and lead-in with the diagram because they do not need a named page size.
+    const group = element.closest(".markpdf-heading-diagram-group");
+    const detachHeading = useLandscape || (useForcedPage && detachHeadingHint);
+    const pageElement = detachHeading ? element : diagramPageElement(element);
+    const skipForcedBreakBefore = useForcedPage && !useLandscape && startsAfterLandscapePage(pageElement);
+    if (group) {
+      group.classList.toggle("markpdf-heading-before-diagram-page", detachHeading);
+      group.classList.toggle("markpdf-heading-before-landscape", useLandscape);
+      if (detachHeading) {
+        group.classList.remove(
+          "markpdf-forced-page",
+          "markpdf-forced-page-after",
+          "markpdf-landscape-page",
+          "markpdf-landscape-page-fragmentable"
+        );
+      }
+    }
+
+    pageElement.classList.toggle("markpdf-forced-page", useForcedPage && !skipForcedBreakBefore);
+    pageElement.classList.toggle("markpdf-forced-page-after", useForcedPage && !useLandscape);
+    pageElement.classList.toggle("markpdf-landscape-page", useLandscape);
+    pageElement.classList.toggle("markpdf-landscape-page-fragmentable", useLandscape && isOversized);
+
+    if (pageElement !== element) {
+      element.classList.remove(
+        "markpdf-forced-page",
+        "markpdf-forced-page-after",
+        "markpdf-landscape-page",
+        "markpdf-landscape-page-fragmentable"
+      );
+    }
+  }
+
+  function startsAfterLandscapePage(element) {
+    // Switching from a named landscape page back to the default portrait page
+    // already forces Chromium to start a new page. Adding break-before on the
+    // next forced portrait section creates an unnecessary blank page.
+    const previous = previousMeaningfulElement(element);
+    return Boolean(previous && containsLandscapePage(previous));
+  }
+
+  function containsLandscapePage(element) {
+    return element.classList.contains("markpdf-landscape-page") ||
+      Boolean(element.querySelector(".markpdf-landscape-page"));
+  }
+
+  function diagramPageElement(element) {
+    // Ungrouped diagrams can still request landscape; grouped diagrams need the
+    // wrapper to prevent Chrome from printing the heading on the previous page.
+    return element.closest(".markpdf-heading-diagram-group") || element;
   }
 
   function readSvgSize(svg) {
@@ -455,9 +784,46 @@
     return { width, height };
   }
 
-  function diagramLayout(width, height, containerWidth) {
+  function trimMermaidSvgViewport(svg) {
+    // Mermaid sometimes leaves large empty areas in the SVG viewBox after graph
+    // layout. If we size against that untrimmed viewBox, the actual diagram
+    // looks unnecessarily tiny in the PDF. getBBox measures drawn content. Use
+    // the whole SVG rather than the first child group because Mermaid can nest
+    // labels and markers outside the first graph group.
+    const originalViewBox = readSvgSize(svg);
+    const content = svg;
+    let box;
+    try {
+      box = content.getBBox();
+    } catch (_error) {
+      return;
+    }
+    if (!box || box.width <= 0 || box.height <= 0) return;
+
+    const padding = 44;
+    const x = Math.floor(box.x - padding);
+    const y = Math.floor(box.y - padding);
+    const width = Math.ceil(box.width + padding * 2);
+    const height = Math.ceil(box.height + padding * 2);
+    if (width <= 0 || height <= 0) return;
+    if (originalViewBox.width && originalViewBox.height) {
+      // A dramatic shrink usually means the browser omitted a label,
+      // foreignObject, or marker from getBBox. Skip those cases; it is better to
+      // leave some whitespace than to crop labels or enlarge partial content.
+      const widthRatio = width / originalViewBox.width;
+      const heightRatio = height / originalViewBox.height;
+      if (widthRatio < 0.72 || heightRatio < 0.72) return;
+      if (width >= originalViewBox.width && height >= originalViewBox.height) return;
+    }
+
+    svg.setAttribute("viewBox", `${x} ${y} ${width} ${height}`);
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+  }
+
+  function diagramLayout(width, height, containerWidth, maxDiagramHeight) {
     const ratio = width / height;
-    const maxReadableHeight = diagramMaxReadableHeight(ratio, containerWidth);
+    const maxReadableHeight = diagramMaxReadableHeight(ratio, containerWidth, maxDiagramHeight);
     const targetWidth = Math.min(width, containerWidth);
     const intrinsicMode = width > containerWidth ? "fit-width" : "intrinsic";
 
@@ -475,13 +841,16 @@
     return { mode: "oversized", ratio, width: targetWidth, maxHeight: 0, maxReadableHeight };
   }
 
-  function diagramMaxReadableHeight(ratio, containerWidth) {
+  function diagramMaxReadableHeight(ratio, containerWidth, maxDiagramHeight) {
     // Tall diagrams need a lower cap than wide diagrams; otherwise Chrome tries
     // to fragment an avoid-break SVG and can orphan the preceding heading.
-    if (ratio < 0.35) return Math.max(440, Math.min(500, containerWidth * 0.74));
-    if (ratio < 0.65) return Math.max(430, Math.min(500, containerWidth * 0.74));
-    if (ratio < 1.15) return Math.max(520, Math.min(640, containerWidth * 0.9));
-    return Math.max(520, Math.min(760, containerWidth * 1.08));
+    let height;
+    if (ratio < 0.35) height = Math.max(440, Math.min(500, containerWidth * 0.74));
+    else if (ratio < 0.65) height = Math.max(430, Math.min(500, containerWidth * 0.74));
+    else if (ratio < 1.15) height = Math.max(520, Math.min(640, containerWidth * 0.9));
+    else height = Math.max(520, Math.min(760, containerWidth * 1.08));
+
+    return maxDiagramHeight > 0 ? maxDiagramHeight : height;
   }
 
   function diagramMinReadableWidth(ratio, containerWidth) {

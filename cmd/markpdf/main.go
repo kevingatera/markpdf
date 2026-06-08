@@ -20,6 +20,7 @@ var version = "dev"
 type cliOptions struct {
 	configPath   string
 	outputPath   string
+	dumpHTMLPath string
 	theme        string
 	customCSS    string
 	title        string
@@ -90,6 +91,7 @@ func newRootCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&cli.report, "report", false, "apply polished report defaults: cover, TOC, header/footer, 24mm margins, neutral Mermaid")
 	cmd.Flags().BoolVar(&cli.cover, "cover", false, "include a title page using cover metadata or the first H1")
 	cmd.Flags().BoolVar(&cli.toc, "toc", false, "include a table of contents")
+	cmd.Flags().StringVar(&cli.dumpHTMLPath, "dump-html", "", "write intermediate HTML to this path instead of generating PDF")
 
 	cmd.AddCommand(newThemesCommand(), newInitCommand(), newBrowserCommand())
 	return cmd
@@ -100,6 +102,9 @@ func runConvert(cli cliOptions, inputs []string) error {
 		opts, err := loadOptions(cli)
 		if err != nil {
 			return err
+		}
+		if cli.dumpHTMLPath != "" {
+			opts.DumpHTMLPath = cli.dumpHTMLPath
 		}
 		converter, err := markpdf.NewWithOptions(opts)
 		if err != nil {

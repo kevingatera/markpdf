@@ -119,6 +119,9 @@ func (c *Converter) writeDocument(content string, opts Options, outputPath strin
 	if err != nil {
 		return err
 	}
+	if opts.DumpHTMLPath != "" {
+		return os.WriteFile(opts.DumpHTMLPath, []byte(doc), 0o644)
+	}
 	return c.writePDF(doc, opts, outputPath)
 }
 

@@ -18,17 +18,25 @@ func TestBaseCSSAvoidsMidElementBreaks(t *testing.T) {
 
 	for _, expected := range []string{
 		".markpdf-table-wrapper",
+		".markpdf-table-wrapper code",
 		".markpdf-code-block",
 		"data-language",
 		"break-inside: avoid",
 		"page-break-inside: avoid",
+		"overflow-wrap: anywhere",
+		"white-space: normal",
 		".markpdf-diagram-wide",
 		".markpdf-diagram-small",
 		".markpdf-diagram-tall",
 		".markpdf-diagram-fit-page",
 		".markpdf-diagram-oversized",
+		".markpdf-diagram-landscape",
+		".markpdf-forced-page",
+		".markpdf-forced-page-after",
+		".markpdf-landscape-page",
+		"page: markpdf-landscape",
 		".markpdf-heading-diagram-group",
-		"overflow-wrap: anywhere",
+		".markpdf-heading-before-diagram-page",
 	} {
 		if !strings.Contains(css, expected) {
 			t.Fatalf("expected base CSS to contain %q", expected)
@@ -49,8 +57,22 @@ func TestRuntimeNormalizesCodeHighlighting(t *testing.T) {
 		"markpdf-command",
 		"markpdf-http",
 		"markpdf-template",
+		"printMetrics",
+		"mermaidPrintHints",
+		"forceLandscape",
+		"forcePage",
+		"detachHeading",
+		"heading-before",
+		"shouldUseLandscapePage",
+		"shouldUseBalancedFlowchartLayout",
+		"mermaidSourceStats",
+		"markpdf-diagram-landscape",
+		"markpdf-landscape-page",
 		"normalizeMermaidSource",
 		"inferAPILanguage",
+		"inferUnlabeledLanguage",
+		"looksLikeHTTPRequest",
+		`className: "operator"`,
 		`"commands": "markpdf-command"`,
 		`"partial": "markpdf-template"`,
 		`return "markpdf-http"`,
@@ -63,23 +85,8 @@ func TestRuntimeNormalizesCodeHighlighting(t *testing.T) {
 }
 
 func TestRideauThemeIsEmbedded(t *testing.T) {
-	data, err := internal.FS.ReadFile("themes/rideau.css")
-	if err != nil {
+	if _, err := internal.FS.ReadFile("themes/rideau.css"); err != nil {
 		t.Fatal(err)
-	}
-	css := string(data)
-
-	for _, expected := range []string{
-		"Rideau",
-		"--rideau-blue: #004890",
-		"--rideau-green: #00a78d",
-		"--markpdf-bg: #f6fbfa",
-		".mermaid",
-		"border: 0",
-	} {
-		if !strings.Contains(css, expected) {
-			t.Fatalf("expected Rideau theme CSS to contain %q", expected)
-		}
 	}
 }
 

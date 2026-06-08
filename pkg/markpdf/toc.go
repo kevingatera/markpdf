@@ -46,11 +46,49 @@ func buildTOC(content string) string {
 	if len(headings) == 0 {
 		return ""
 	}
+
 	var b strings.Builder
 	b.WriteString(`<nav class="markpdf-toc"><h2>Contents</h2><ol>`)
-	for _, h := range headings {
-		b.WriteString(fmt.Sprintf(`<li class="toc-level-%d"><a href="#%s">%s</a></li>`, h.Level, h.ID, h.Text))
+
+	// First heading opens the outermost <li>.
+	b.WriteString(fmt.Sprintf(
+		`<li class="toc-level-%d"><a href="#%s">%s</a>`,
+		headings[0].Level, headings[0].ID, headings[0].Text,
+	))
+	prevLevel := headings[0].Level
+
+	for _, h := range headings[1:] {
+		if h.Level > prevLevel {
+			// Deeper — start a nested <ol> inside the current <li>.
+			b.WriteString(`<ol>`)
+		} else if h.Level < prevLevel {
+			// Shallower — close nested </ol> and </li> for each level we pop.
+			for l := prevLevel; l > h.Level; l-- {
+				b.WriteString(`</li></ol>`)
+			}
+			// Close the sibling <li> at the new level.
+			b.WriteString(`</li>`)
+		} else {
+			// Same level — close previous <li>, open new sibling.
+			b.WriteString(`</li>`)
+		}
+		b.WriteString(fmt.Sprintf(
+			`<li class="toc-level-%d"><a href="#%s">%s</a>`,
+			h.Level, h.ID, h.Text,
+		))
+		prevLevel = h.Level
 	}
+
+	// Close remaining open tags.
+	minLevel := headings[0].Level
+	if prevLevel > minLevel {
+		b.WriteString(`</li>`) // close innermost <li>
+	}
+	for l := prevLevel; l > minLevel; l-- {
+		b.WriteString(`</ol>`)
+	}
+	b.WriteString(`</li>`) // close outermost <li>
 	b.WriteString(`</ol></nav>`)
+
 	return b.String()
 }

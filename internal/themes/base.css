@@ -249,8 +249,33 @@ th, td {
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid var(--markpdf-border);
+  border-right: 1px solid var(--markpdf-border);
   overflow-wrap: break-word;
   word-break: normal;
+}
+
+th:last-child,
+td:last-child {
+  border-right: none;
+}
+
+.markpdf-table-wrapper th,
+.markpdf-table-wrapper td,
+.markpdf-table-wrapper code,
+.markpdf-table-wrapper a {
+  /* Long API URLs, SQL filters, and comma-heavy field lists often appear inside
+     inline code. `break-word` paints acceptably after layout, but Chromium does
+     not count it when calculating a table column's minimum width. `anywhere`
+     gives print layout real shrink points so one long code token cannot push
+     the whole table into the footer/header gutter. */
+  overflow-wrap: anywhere;
+}
+
+.markpdf-table-wrapper code {
+  /* Inline code defaults are fine in prose, but tables need wrapping to remain
+     printable. Preserve the monospace styling while letting long endpoints
+     wrap inside their cell instead of widening the whole table. */
+  white-space: normal;
 }
 
 th:first-child,
@@ -335,9 +360,46 @@ img, svg {
   max-height: var(--markpdf-diagram-max-height);
 }
 
+.markpdf-diagram-landscape svg {
+  /* The runtime sets this cap from the shorter landscape printable height so a
+     wide diagram can fit one page without clipping into the footer. */
+  max-height: var(--markpdf-diagram-max-height, none);
+}
+
 .markpdf-diagram-oversized {
   /* Truly large diagrams must be allowed to fragment rather than forcing Chrome
      to reserve a blank page before the diagram. */
+  page-break-inside: auto;
+  break-inside: auto;
+}
+
+.markpdf-forced-page {
+  /* Runtime/applied Mermaid hints can promote a diagram to its own print page
+     without relying on the automatic landscape-size heuristic. */
+  page-break-before: always;
+  break-before: page;
+}
+
+.markpdf-forced-page-after {
+  /* Portrait forced pages need an explicit break after the diagram; landscape
+     pages omit this because named-page transitions already move following
+     content back to portrait and break-after can create blank pages in Chrome. */
+  page-break-after: always;
+  break-after: page;
+}
+
+.markpdf-landscape-page {
+  /* Named pages let one large diagram rotate without changing the rest of the
+     document. Only force a break before the rotated block; forcing a break
+     after can create blank pages when Chromium has already ended the named page. */
+  page: markpdf-landscape;
+  page-break-before: always;
+  break-before: page;
+}
+
+.markpdf-landscape-page-fragmentable {
+  /* If a diagram is still too large after landscape scaling, allow Chrome to
+     fragment it instead of leaving large blank pages around it. */
   page-break-inside: auto;
   break-inside: auto;
 }
@@ -347,6 +409,20 @@ img, svg {
      title on one page and start the diagram on the next. */
   page-break-inside: avoid;
   break-inside: avoid-page;
+}
+
+.markpdf-heading-before-landscape {
+  /* For rotated diagrams the heading should stay in the surrounding document
+     flow; only the diagram itself gets the named landscape page. */
+  page-break-inside: auto;
+  break-inside: auto;
+}
+
+.markpdf-heading-before-diagram-page {
+  /* Named-page diagrams detach from their heading so the heading can remain on
+     the surrounding portrait page while only the diagram changes page size. */
+  page-break-inside: auto;
+  break-inside: auto;
 }
 
 .katex-display {
@@ -430,23 +506,40 @@ img, svg {
 
 .markpdf-toc a {
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .markpdf-toc ol {
   padding-left: 0;
   list-style: none;
-  counter-reset: toc-item;
+  margin: 0;
 }
 
-.markpdf-toc ol li {
-  margin: 0.4em 0;
-  counter-increment: toc-item;
+.markpdf-toc ol ol {
+  /* Nested lists indent and add top spacing to separate from parent link. */
+  padding-left: 1.5em;
+  margin: 0.3em 0 0.45em;
 }
 
-.markpdf-toc ol li::before {
-  content: counter(toc-item) ". ";
+.markpdf-toc > ol > li {
+  /* Top-level entries get generous vertical breathing room. */
+  margin: 0.55em 0;
+}
+
+.markpdf-toc > ol > li > a {
+  font-weight: 600;
+}
+
+.markpdf-toc ol ol li {
+  /* Nested entries are visually subordinate: smaller, tighter. */
+  margin: 0.2em 0;
+  font-size: 0.88em;
   color: var(--markpdf-muted);
-  font-variant-numeric: tabular-nums;
+}
+
+.markpdf-toc ol ol li a {
+  color: var(--markpdf-text);
+  font-weight: 400;
 }
 
 @media print {
@@ -492,12 +585,44 @@ img, svg {
     overflow: visible;
   }
 
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h1,
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h2,
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h3,
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h4,
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h5,
+  .markpdf-landscape-page.markpdf-heading-diagram-group > h6 {
+    margin-top: 0;
+    margin-bottom: 0.35em;
+    padding-top: 0;
+  }
+
+  .markpdf-landscape-page .mermaid,
+  .mermaid.markpdf-landscape-page {
+    margin: 0.35em 0 0;
+    padding: 0.2em 0;
+  }
+
   .markpdf-toc {
     /* TOC pages can continue across page breaks; clone padding prevents the
-       first item on a continuation page from sitting under the native header. */
+       first item on a continuation page from sitting under the native header.
+       The TOC already forces a page break after itself, so avoid printing the
+       decorative bottom rule/padding. Chromium otherwise reserves that end
+       decoration with the final item and may push one lonely entry forward. */
     padding-top: 0.18in;
+    padding-bottom: 0;
+    border-bottom: 0 !important;
+    page-break-inside: auto;
+    break-inside: auto;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
+  }
+
+  .markpdf-toc ol {
+    margin-bottom: 0;
+  }
+
+  .markpdf-toc ol li:last-child {
+    margin-bottom: 0;
   }
 
   .markpdf-table-wrapper,

@@ -4,6 +4,7 @@ package markpdf
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
@@ -13,16 +14,28 @@ import (
 )
 
 type htmlData struct {
-	Title        string
-	CSS          template.CSS
-	Cover        template.HTML
-	TOC          template.HTML
-	Content      template.HTML
-	HighlightJS  template.JS
-	KaTeXJS      template.JS
-	MermaidJS    template.JS
-	RuntimeJS    template.JS
-	MermaidTheme string
+	Title         string
+	CSS           template.CSS
+	Cover         template.HTML
+	TOC           template.HTML
+	Content       template.HTML
+	HighlightJS   template.JS
+	KaTeXJS       template.JS
+	MermaidJS     template.JS
+	RuntimeJS     template.JS
+	RuntimeConfig template.JS
+}
+
+type browserRuntimeConfig struct {
+	MermaidTheme string             `json:"mermaidTheme"`
+	Print        browserPrintConfig `json:"print"`
+}
+
+type browserPrintConfig struct {
+	PortraitContentWidth   float64 `json:"portraitContentWidth"`
+	PortraitContentHeight  float64 `json:"portraitContentHeight"`
+	LandscapeContentWidth  float64 `json:"landscapeContentWidth"`
+	LandscapeContentHeight float64 `json:"landscapeContentHeight"`
 }
 
 func buildHTML(content string, opts Options) (string, error) {
@@ -71,16 +84,16 @@ func buildHTML(content string, opts Options) (string, error) {
 	}
 	var out bytes.Buffer
 	err = tpl.Execute(&out, htmlData{
-		Title:        title,
-		CSS:          template.CSS(css),
-		Cover:        template.HTML(cover),
-		TOC:          template.HTML(toc),
-		Content:      template.HTML(content),
-		HighlightJS:  template.JS(string(highlightJS)),
-		KaTeXJS:      template.JS(string(katexJS)),
-		MermaidJS:    template.JS(string(mermaidJS)),
-		RuntimeJS:    template.JS(string(runtimeJS)),
-		MermaidTheme: opts.Mermaid.Theme,
+		Title:         title,
+		CSS:           template.CSS(css),
+		Cover:         template.HTML(cover),
+		TOC:           template.HTML(toc),
+		Content:       template.HTML(content),
+		HighlightJS:   template.JS(string(highlightJS)),
+		KaTeXJS:       template.JS(string(katexJS)),
+		MermaidJS:     template.JS(string(mermaidJS)),
+		RuntimeJS:     template.JS(string(runtimeJS)),
+		RuntimeConfig: runtimeConfigJS(opts),
 	})
 	if err != nil {
 		return "", err
@@ -124,7 +137,9 @@ func loadCSS(opts Options) (string, error) {
 func pageCSS(opts Options) string {
 	// Top/bottom are true @page margins because Chrome's native header/footer
 	// templates live outside the DOM. Left/right are document padding so themed
-	// backgrounds can paint edge-to-edge behind the content.
+	// backgrounds can paint edge-to-edge behind the content. A named landscape
+	// page is emitted for runtime-classified diagrams without forcing the whole
+	// document into landscape.
 	top := printMargin(opts.Page.Margins.Top, opts.Header != "")
 	bottom := printMargin(opts.Page.Margins.Bottom, opts.Footer != "")
 	right := printMargin(opts.Page.Margins.Right, false)
@@ -133,6 +148,12 @@ func pageCSS(opts Options) string {
 	contentBottom := printContentInset(opts.Footer != "")
 
 	return fmt.Sprintf(`@page {
+  size: %s;
+  margin: %s 0 %s 0;
+  background: var(--markpdf-bg);
+}
+
+@page markpdf-landscape {
   size: %s;
   margin: %s 0 %s 0;
   background: var(--markpdf-bg);
@@ -148,11 +169,57 @@ func pageCSS(opts Options) string {
 		pageSizeCSS(opts.Page.Size, opts.Page.Orientation),
 		top,
 		bottom,
+		pageSizeCSS(opts.Page.Size, "landscape"),
+		top,
+		bottom,
 		contentTop,
 		right,
 		contentBottom,
 		left,
 	)
+}
+
+func runtimeConfigJS(opts Options) template.JS {
+	// Browser-side diagram sizing needs the same page dimensions as the print
+	// pipeline. Passing them as JSON avoids duplicating Go's page/margin parsing
+	// in JavaScript.
+	data, err := json.Marshal(browserRuntimeConfig{
+		MermaidTheme: opts.Mermaid.Theme,
+		Print:        runtimePrintConfig(opts),
+	})
+	if err != nil {
+		return template.JS("{}")
+	}
+	return template.JS(data)
+}
+
+func runtimePrintConfig(opts Options) browserPrintConfig {
+	// Use the effective margins after header/footer safety expansion; otherwise
+	// the runtime would overestimate available height and choose landscape pages
+	// that still clip under Chrome's native header/footer bands.
+	top := parseLengthInches(printMargin(opts.Page.Margins.Top, opts.Header != ""))
+	bottom := parseLengthInches(printMargin(opts.Page.Margins.Bottom, opts.Footer != ""))
+	left := parseLengthInches(printMargin(opts.Page.Margins.Left, false))
+	right := parseLengthInches(printMargin(opts.Page.Margins.Right, false))
+
+	portraitWidth, portraitHeight := pageSizeInches(opts.Page.Size, "portrait")
+	landscapeWidth, landscapeHeight := pageSizeInches(opts.Page.Size, "landscape")
+
+	return browserPrintConfig{
+		PortraitContentWidth:   inchesToCSSPixels(portraitWidth - left - right),
+		PortraitContentHeight:  inchesToCSSPixels(portraitHeight - top - bottom),
+		LandscapeContentWidth:  inchesToCSSPixels(landscapeWidth - left - right),
+		LandscapeContentHeight: inchesToCSSPixels(landscapeHeight - top - bottom),
+	}
+}
+
+func inchesToCSSPixels(inches float64) float64 {
+	// Headless Chromium reports SVG and element dimensions in CSS pixels even
+	// though CDP PDF configuration is inch-based.
+	if inches <= 0 {
+		return 0
+	}
+	return inches * 96
 }
 
 func pageSizeCSS(size, orientation string) string {
@@ -164,7 +231,19 @@ func pageSizeCSS(size, orientation string) string {
 	if strings.Contains(strings.ToLower(size), "x") {
 		parts := strings.SplitN(strings.ToLower(size), "x", 2)
 		if len(parts) == 2 {
-			return strings.TrimSpace(parts[0]) + " " + strings.TrimSpace(parts[1])
+			width := strings.TrimSpace(parts[0])
+			height := strings.TrimSpace(parts[1])
+			widthInches := parseLengthInches(width)
+			heightInches := parseLengthInches(height)
+			// Custom WxH values are literal CSS page sizes, so swap the pair for
+			// named landscape pages instead of appending an invalid orientation.
+			if orientation == "landscape" && widthInches > 0 && heightInches > 0 && widthInches < heightInches {
+				width, height = height, width
+			}
+			if orientation != "landscape" && widthInches > 0 && heightInches > 0 && widthInches > heightInches {
+				width, height = height, width
+			}
+			return width + " " + height
 		}
 	}
 	if orientation == "landscape" {

@@ -28,8 +28,15 @@ func pageSizeInches(size, orientation string) (float64, float64) {
 			width, height = w, h
 		}
 	}
-	if strings.EqualFold(orientation, "landscape") && height > width {
-		return height, width
+	switch strings.ToLower(strings.TrimSpace(orientation)) {
+	case "landscape":
+		if height > width {
+			return height, width
+		}
+	case "portrait", "":
+		if width > height {
+			return height, width
+		}
 	}
 	return width, height
 }

@@ -11,7 +11,7 @@
   --markpdf-muted: #526b77;
   --markpdf-border: #c9dfdd;
   --markpdf-accent: #004890;
-  --markpdf-code-bg: #eaf3f5;
+  --markpdf-code-bg: #edf6f7;
   --markpdf-base-font-size: 15.5px;
   --markpdf-heading: #00345d;
   --rideau-blue: #004890;
@@ -52,7 +52,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 4.5rem;
   height: 0.28rem;
   margin: 0 0 1.2rem;
-  background: linear-gradient(90deg, var(--rideau-blue) 0 52%, var(--rideau-green) 52% 100%);
+  background: var(--rideau-blue);
   border-radius: 999px;
 }
 
@@ -84,7 +84,7 @@ h2::before {
   top: 0.16em;
   bottom: 0.16em;
   width: 0.24rem;
-  background: linear-gradient(180deg, var(--rideau-blue), var(--rideau-green));
+  background: var(--rideau-blue);
   border-radius: 999px;
 }
 
@@ -100,11 +100,11 @@ a {
 }
 
 blockquote {
-  background: color-mix(in srgb, var(--rideau-green-soft) 50%, white);
+  background: transparent;
   border-left: 4px solid var(--rideau-green);
   color: #294554;
   font-style: normal;
-  padding: 0.8rem 1rem;
+  padding: 0.4rem 1rem;
 }
 
 hr {
@@ -120,17 +120,46 @@ code {
 }
 
 pre {
-  background: linear-gradient(180deg, #f9fcfc, var(--markpdf-code-bg));
-  border: 1px solid var(--markpdf-border);
+  background: var(--markpdf-code-bg);
+  border: 1px solid color-mix(in srgb, var(--markpdf-border) 72%, white);
   border-left: 4px solid var(--rideau-blue);
   border-radius: 0.65rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 pre code {
   background: transparent;
   color: var(--rideau-ink);
   padding: 0;
+}
+
+pre code.hljs .hljs-keyword,
+pre code.hljs .hljs-meta {
+  color: var(--rideau-blue);
+  font-weight: 700;
+}
+
+pre code.hljs .hljs-attr,
+pre code.hljs .hljs-attribute {
+  color: #005b77;
+}
+
+pre code.hljs .hljs-string {
+  color: #006c5b;
+}
+
+pre code.hljs .hljs-number,
+pre code.hljs .hljs-literal,
+pre code.hljs .hljs-operator {
+  color: #8a5a00;
+}
+
+pre code.hljs .hljs-built_in,
+pre code.hljs .hljs-title {
+  color: #8a4f00;
+}
+
+pre code.hljs .hljs-comment {
+  color: #637f8a;
 }
 
 pre.markpdf-code-block::before {
@@ -219,7 +248,7 @@ tr:last-child td {
   width: 8rem;
   height: 0.34rem;
   margin-top: 1.75rem;
-  background: linear-gradient(90deg, var(--rideau-blue) 0 50%, var(--rideau-green) 50% 100%);
+  background: var(--rideau-blue);
   border-radius: 999px;
 }
 
@@ -235,7 +264,10 @@ tr:last-child td {
   content: none;
 }
 
-.markpdf-toc ol li::before {
-  color: var(--rideau-blue);
-  font-weight: 700;
+.markpdf-toc > ol > li > a {
+  color: var(--rideau-ink, var(--markpdf-text));
+}
+
+.markpdf-toc ol ol li a {
+  color: var(--rideau-blue, var(--markpdf-accent));
 }

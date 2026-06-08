@@ -22,7 +22,7 @@
   <script>{{ .KaTeXJS }}</script>
   <script>{{ .MermaidJS }}</script>
   <script>
-    window.markpdfConfig = { mermaidTheme: "{{ .MermaidTheme }}" };
+    window.markpdfConfig = {{ .RuntimeConfig }};
   </script>
   <script>{{ .RuntimeJS }}</script>
 </body>
