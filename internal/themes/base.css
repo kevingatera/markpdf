@@ -289,6 +289,11 @@ th {
   font-weight: 600;
   border-bottom-width: 2px;
   border-bottom-color: var(--markpdf-text);
+  /* Short column headers (DATE, TYPE, REQUIRED, etc.) collapse to one-character
+     width when overflow-wrap: anywhere lets adjacent long-content columns
+     dominate the auto-layout budget. A floor on every header keeps labels
+     readable without blocking genuine wrapping in wide tables. */
+  min-width: 4.5rem;
 }
 
 tr:last-child td {
