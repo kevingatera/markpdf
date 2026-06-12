@@ -14,8 +14,13 @@ import (
 
 var (
 	firstH1RE                   = regexp.MustCompile(`(?is)<h1\b[^>]*>(.*?)</h1>`)
-	italicSubtitleAfterH1       = regexp.MustCompile(`(?is)<h1\b[^>]*>.*?</h1>\s*<p>\s*<(?:em|strong)>(.*?)</(?:em|strong)>\s*</p>`)
-	firstH1WithItalicSubtitleRE = regexp.MustCompile(`(?is)<h1\b[^>]*>.*?</h1>\s*<p>\s*<(?:em|strong)>.*?</(?:em|strong)>\s*</p>`)
+	// The subtitle is the plain text inside the first <em> or <strong> after the
+	// H1.  Using [^<]* instead of .*? prevents the DOTALL flag from letting the
+	// capture span across HTML tag boundaries into later paragraphs — which would
+	// consume entire body sections when the first bold/italic paragraph contains
+	// mixed inline tags (e.g. multiple <strong> spans in one <p>).
+	italicSubtitleAfterH1       = regexp.MustCompile(`(?is)<h1\b[^>]*>.*?</h1>\s*<p>\s*<(?:em|strong)>([^<]*)</(?:em|strong)>\s*</p>`)
+	firstH1WithItalicSubtitleRE = regexp.MustCompile(`(?is)<h1\b[^>]*>.*?</h1>\s*<p>\s*<(?:em|strong)>[^<]*</(?:em|strong)>\s*</p>`)
 	leadingParagraphRE          = regexp.MustCompile(`(?is)^\s*<p>(.*?)</p>`)
 	leadingHRRE                 = regexp.MustCompile(`(?is)^\s*<hr\s*/?>`)
 )
